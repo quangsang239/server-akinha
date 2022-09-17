@@ -3,5 +3,5 @@ export interface IUser extends Document {
   email: string;
   userName: string;
   password: string;
-  token: string;
+  refreshToken: string;
 }
