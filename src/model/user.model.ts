@@ -6,7 +6,7 @@ const userSchema = new Schema<IUser>({
   email: { type: String, required: true },
   userName: { type: String, required: true },
   password: String,
-  token: String,
+  refreshToken: String,
 });
 const UserModel = model<IUser>("user", userSchema);
 export default UserModel;
