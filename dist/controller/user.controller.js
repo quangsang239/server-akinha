@@ -48,6 +48,7 @@ const createUser = async (req, res, _next) => {
 const loginUser = async (req, res) => {
     try {
         const { userName, password } = req.body;
+        console.log(req.headers);
         const user = await user_model_1.default.findOne({
             userName,
         }).exec();
@@ -64,6 +65,7 @@ const loginUser = async (req, res) => {
                     .catch((error) => {
                     console.log(error);
                 });
+                res.setHeader("Authorization", accessToken);
                 res.status(200).json({
                     message: "Login Success!",
                     accessToken: accessToken,

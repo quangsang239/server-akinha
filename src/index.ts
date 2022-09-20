@@ -1,7 +1,6 @@
 import express from "express";
 import http from "http";
 import mongoose from "mongoose";
-import cookieParser from "cookie-parser";
 
 import { urlConnection, port } from "./config/config";
 import router from "./routes/index";
@@ -12,8 +11,6 @@ const server = async () => {
     });
     const app = express();
     // app.use("/user", router);
-    app.use(cookieParser());
-    app.use(express.json());
     router(app);
     const httpServer = http.createServer(app);
 
