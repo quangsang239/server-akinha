@@ -1,4 +1,6 @@
-import { Application, Request, Response, NextFunction } from "express";
+import express, { Application, Request, Response, NextFunction } from "express";
+import cookieParser from "cookie-parser";
+
 import userRouter from "./user.router";
 
 const router = (app: Application) => {
@@ -8,6 +10,8 @@ const router = (app: Application) => {
     res.header("Access-Control-Allow-Header", "Content-Type");
     next();
   });
+  app.use(cookieParser());
+  app.use(express.json());
   app.get("/", (_req: Request, res: Response) => {
     res.send("server");
   });
