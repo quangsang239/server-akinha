@@ -4,9 +4,81 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const user_model_1 = __importDefault(require("../model/user.model"));
+const userVerification_1 = __importDefault(require("../model/userVerification"));
 const config_1 = require("../config/config");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
+const nodemailer_1 = __importDefault(require("nodemailer"));
+const uuid_1 = require("uuid");
+const path_1 = __importDefault(require("path"));
+let transporter = nodemailer_1.default.createTransport({
+    host: "smtp.gmail.com",
+    port: 587,
+    secure: false,
+    auth: {
+        user: config_1.EMAIL_USERNAME,
+        pass: config_1.EMAIL_PASSWORD,
+    },
+});
+transporter.verify((error, success) => {
+    if (error) {
+        console.log(error);
+    }
+    else {
+        console.log("Ready for message!!");
+        console.log(success);
+    }
+});
+const sendVerificationEmail = ({ _id, email }) => {
+    const currentUrl = "http://localhost:1305/";
+    const uniqueString = (0, uuid_1.v4)() + _id;
+    const mailOptions = {
+        from: config_1.EMAIL_USERNAME,
+        to: email,
+        subject: "Verify Your Email!!!",
+        html: `<p>Verify your email address to complete signup and login</p><p>This link <b>expires in 6 hours</b>.</p><p>Press <a href=${currentUrl + "user/verify/" + _id + "/" + uniqueString}>here</a> to proceed.</p>`,
+    };
+    bcrypt_1.default
+        .hash(uniqueString, config_1.SALT_ROUNDS)
+        .then((hashedUniqueString) => {
+        userVerification_1.default.create({
+            userId: _id,
+            uniqueString: hashedUniqueString,
+            createdAt: Date.now(),
+            expiresAt: Date.now() + 21600000,
+        })
+            .then(() => {
+            transporter
+                .sendMail(mailOptions)
+                .then(() => {
+                console.log({
+                    status: "PENDING",
+                    message: "Verification email sent!",
+                });
+            })
+                .catch((error) => {
+                console.log(error);
+                console.log({
+                    status: "FAILED",
+                    message: "Couldn't send email!",
+                });
+            });
+        })
+            .catch((error) => {
+            console.log(error);
+            console.log({
+                status: "FAILED",
+                message: "Couldn't save verification!",
+            });
+        });
+    })
+        .catch(() => {
+        console.log({
+            status: "FAILED!!",
+            message: "An error occurred while hashing email data",
+        });
+    });
+};
 const getAllUser = async (_req, res, _next) => {
     const allUser = await user_model_1.default.find({}).exec();
     res.status(200).json(allUser);
@@ -30,8 +102,10 @@ const createUser = async (req, res, _next) => {
         userName: userName.toLowerCase(),
         password: hashPassword,
         refreshToken: "",
+        verified: false,
     })
-        .then(() => {
+        .then((result) => {
+        sendVerificationEmail(result);
         return res.status(200).json({
             message: "create user success!",
             code: 0,
@@ -48,7 +122,6 @@ const createUser = async (req, res, _next) => {
 const loginUser = async (req, res) => {
     try {
         const { userName, password } = req.body;
-        console.log(req.headers);
         const user = await user_model_1.default.findOne({
             userName,
         }).exec();
@@ -65,7 +138,6 @@ const loginUser = async (req, res) => {
                     .catch((error) => {
                     console.log(error);
                 });
-                res.setHeader("Authorization", accessToken);
                 res.status(200).json({
                     message: "Login Success!",
                     accessToken: accessToken,
@@ -117,11 +189,91 @@ const getNewAccessToken = async (req, res) => {
         res.status(500).json({ message: "Server error!" });
     }
 };
+const userVerify = (req, res) => {
+    const userId = req.params.userId;
+    const uniqueString = req.params.uniqueString;
+    userVerification_1.default.find({ userId })
+        .then((result) => {
+        console.log({ result });
+        if (result.length > 0) {
+            const { expiresAt } = result[0];
+            const hashedUniqueString = result[0].uniqueString;
+            if (expiresAt.getTime() < Date.now()) {
+                userVerification_1.default.deleteOne({ userId })
+                    .then(() => {
+                    user_model_1.default.deleteOne({ _id: userId })
+                        .then(() => {
+                        let message = "Link has expired. Please signup again";
+                        res.redirect(`/user/verified/error=true&message=${message}`);
+                    })
+                        .catch((error) => {
+                        console.log(error);
+                        let message = "Clearing user with expired unique string failed";
+                        res.redirect(`/user/verified/error=true&message=${message}`);
+                    });
+                })
+                    .catch((error) => {
+                    console.log(error);
+                    let message = "An error occurred while clearing for expired user verification record";
+                    res.redirect(`/user/verified/error=true&message=${message}`);
+                });
+            }
+            else {
+                bcrypt_1.default
+                    .compare(uniqueString, hashedUniqueString)
+                    .then((result) => {
+                    if (result) {
+                        user_model_1.default.updateOne({ _id: userId }, { verified: true })
+                            .then(() => {
+                            userVerification_1.default.deleteOne({ userId })
+                                .then(() => {
+                                res.sendFile(path_1.default.join(__dirname, "./../views/verified.html"));
+                            })
+                                .catch((error) => {
+                                console.log(error);
+                                let message = "An error while finalizing successful verification";
+                                res.redirect(`/user/verified/error=true&message=${message}`);
+                            });
+                        })
+                            .catch((error) => {
+                            console.log(error);
+                            let message = "An error while updating user";
+                            res.redirect(`/user/verified/error=true&message=${message}`);
+                        });
+                    }
+                    else {
+                        let message = "invalid verification details passed. Check your inbox.";
+                        res.redirect(`/user/verified/error=true&message=${message}`);
+                    }
+                })
+                    .catch((error) => {
+                    console.log(error);
+                    let message = "An error occurred while comparing unique strings";
+                    res.redirect(`/user/verified/error=true&message=${message}`);
+                });
+            }
+        }
+        else {
+            let message = "Account record doesn't exit or has been verify already. Please signup and login.";
+            res.redirect(`/user/verified/error=true&message=${message}`);
+        }
+    })
+        .catch((error) => {
+        console.log(error);
+        let message = "An error occurred while checking for exiting user verification record";
+        res.redirect(`/user/verified/error=true&message=${message}`);
+    });
+};
+const sendVerify = (_req, res) => {
+    res.sendFile(path_1.default.join(__dirname, "./../views/verified.html"));
+};
 exports.default = {
     createUser,
     getAllUser,
     getUser,
     loginUser,
     getNewAccessToken,
+    userVerify,
+    sendVerify,
 };
 //# sourceMappingURL=user.controller.js.map

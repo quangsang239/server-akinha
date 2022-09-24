@@ -11,5 +11,7 @@ router.get("/get-all-user", authRequest_1.default, user_controller_1.default.get
 router.post("/create-user", user_controller_1.default.createUser);
 router.post("/login", user_controller_1.default.loginUser);
 router.post("/get-access-token", user_controller_1.default.getNewAccessToken);
+router.get("/verify/:userId/:uniqueString", user_controller_1.default.userVerify);
+router.post("/verified", user_controller_1.default.sendVerify);
 exports.default = router;
 //# sourceMappingURL=user.router.js.map

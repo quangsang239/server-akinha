@@ -6,6 +6,7 @@ const userSchema = new mongoose_1.Schema({
     userName: { type: String, required: true },
     password: String,
     refreshToken: String,
+    verified: String,
 });
 const UserModel = (0, mongoose_1.model)("user", userSchema);
 exports.default = UserModel;
