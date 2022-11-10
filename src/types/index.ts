@@ -12,3 +12,13 @@ export interface IUserVerification extends Document {
   createdAt: Date;
   expiresAt: Date;
 }
+export interface IAccommodation extends Document {
+  userId: string;
+  stateRoom: boolean;
+  imageRoom: [string];
+  addressRoom: string;
+  latitude: number;
+  longitude: number;
+  price: number;
+  phone: number;
+}
