@@ -105,7 +105,7 @@ const createUser = async (
   res: Response,
   _next: NextFunction
 ): Promise<any> => {
-  const { email, userName, password } = req.body;
+  const { email, userName, password }: IUser = req.body;
   console.log({ email, userName, password });
   const checkUser: IUser | null = await UserModel.findOne({
     userName: userName.toLowerCase(),

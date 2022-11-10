@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const user_router_1 = __importDefault(require("./user.router"));
+const accommodation_router_1 = __importDefault(require("./accommodation.router"));
 const router = (app) => {
     app.use(function (_req, res, next) {
         res.header("Access-Control-Allow-Origin", "*");
@@ -19,6 +20,7 @@ const router = (app) => {
         res.send("server");
     });
     app.use("/user", user_router_1.default);
+    app.use("/room", accommodation_router_1.default);
 };
 exports.default = router;
 //# sourceMappingURL=index.js.map

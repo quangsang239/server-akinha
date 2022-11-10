@@ -2,6 +2,7 @@ import express, { Application, Request, Response, NextFunction } from "express";
 import cookieParser from "cookie-parser";
 
 import userRouter from "./user.router";
+import roomRouter from "./accommodation.router";
 
 const router = (app: Application) => {
   app.use(function (_req: Request, res: Response, next: NextFunction) {
@@ -16,5 +17,6 @@ const router = (app: Application) => {
     res.send("server");
   });
   app.use("/user", userRouter);
+  app.use("/room", roomRouter);
 };
 export default router;
