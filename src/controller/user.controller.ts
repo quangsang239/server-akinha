@@ -144,7 +144,7 @@ const loginUser = async (req: Request, res: Response) => {
     if (user) {
       bcrypt.compare(password, user.password).then(async () => {
         const accessToken = jwt.sign({ userId: user._id }, SECRET_KEY, {
-          expiresIn: "15m",
+          expiresIn: "24h",
         });
         const refreshToken = jwt.sign({ userId: user._id }, REFRESH_KEY);
         await UserModel.findOneAndUpdate({ _id: user._id }, { refreshToken })
@@ -159,6 +159,8 @@ const loginUser = async (req: Request, res: Response) => {
           accessToken: accessToken,
           refreshToken: refreshToken,
           userName,
+          verified: user.verified,
+          expireAt: Date.now() + 24 * 60 * 60 * 1000,
         });
       });
     } else res.status(400).json({ message: "User not found!" });

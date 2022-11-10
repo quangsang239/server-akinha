@@ -7,5 +7,7 @@ const express_1 = __importDefault(require("express"));
 const accommodation_controller_1 = __importDefault(require("../controller/accommodation.controller"));
 const router = express_1.default.Router();
 router.get("/get-all-accommodation", accommodation_controller_1.default.getAllAccommodation);
+router.get("/get-room/:id", accommodation_controller_1.default.getAccommodationById);
+router.post("/create-room", accommodation_controller_1.default.createAccommodation);
 exports.default = router;
 //# sourceMappingURL=accommodation.router.js.map
