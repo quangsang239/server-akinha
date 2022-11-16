@@ -155,7 +155,8 @@ const loginUser = async (req: Request, res: Response) => {
             console.log(error);
           });
         res.status(200).json({
-          message: "Login Success!",
+          code: 0,
+          message: "Đăng nhập thành công!",
           accessToken: accessToken,
           refreshToken: refreshToken,
           userName,
@@ -163,7 +164,10 @@ const loginUser = async (req: Request, res: Response) => {
           expireAt: Date.now() + 24 * 60 * 60 * 1000,
         });
       });
-    } else res.status(400).json({ message: "User not found!" });
+    } else
+      res
+        .status(400)
+        .json({ code: 1, message: "Sai tài khoản hoặc mật khẩu!" });
   } catch (error) {
     console.log(error);
     res.status(500).json("Server process failed!");
