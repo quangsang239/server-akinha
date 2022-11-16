@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
+const user_controller_1 = __importDefault(require("../controller/user.controller"));
 const user_router_1 = __importDefault(require("./user.router"));
 const accommodation_router_1 = __importDefault(require("./accommodation.router"));
 const router = (app) => {
@@ -19,8 +20,9 @@ const router = (app) => {
     app.get("/", (_req, res) => {
         res.send("server");
     });
-    app.use("/user", user_router_1.default);
-    app.use("/room", accommodation_router_1.default);
+    app.post("/api/login", user_controller_1.default.loginUser);
+    app.use("/api/user", user_router_1.default);
+    app.use("/api/room", accommodation_router_1.default);
 };
 exports.default = router;
 //# sourceMappingURL=index.js.map

@@ -128,7 +128,7 @@ const loginUser = async (req, res) => {
         if (user) {
             bcrypt_1.default.compare(password, user.password).then(async () => {
                 const accessToken = jsonwebtoken_1.default.sign({ userId: user._id }, config_1.SECRET_KEY, {
-                    expiresIn: "15m",
+                    expiresIn: "24h",
                 });
                 const refreshToken = jsonwebtoken_1.default.sign({ userId: user._id }, config_1.REFRESH_KEY);
                 await user_model_1.default.findOneAndUpdate({ _id: user._id }, { refreshToken })
@@ -139,15 +139,20 @@ const loginUser = async (req, res) => {
                     console.log(error);
                 });
                 res.status(200).json({
-                    message: "Login Success!",
+                    code: 0,
+                    message: "Đăng nhập thành công!",
                     accessToken: accessToken,
                     refreshToken: refreshToken,
                     userName,
+                    verified: user.verified,
+                    expireAt: Date.now() + 24 * 60 * 60 * 1000,
                 });
             });
         }
         else
-            res.status(400).json({ message: "User not found!" });
+            res
+                .status(400)
+                .json({ code: 1, message: "Sai tài khoản hoặc mật khẩu!" });
     }
     catch (error) {
         console.log(error);

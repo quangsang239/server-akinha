@@ -1,5 +1,6 @@
 import express, { Application, Request, Response, NextFunction } from "express";
 import cookieParser from "cookie-parser";
+import userController from "../controller/user.controller";
 
 import userRouter from "./user.router";
 import roomRouter from "./accommodation.router";
@@ -16,7 +17,8 @@ const router = (app: Application) => {
   app.get("/", (_req: Request, res: Response) => {
     res.send("server");
   });
-  app.use("/user", userRouter);
-  app.use("/room", roomRouter);
+  app.post("/api/login", userController.loginUser);
+  app.use("/api/user", userRouter);
+  app.use("/api/room", roomRouter);
 };
 export default router;

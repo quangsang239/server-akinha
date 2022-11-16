@@ -1,18 +1,50 @@
 import { IAccommodation } from "../types";
 import AccommodationModel from "../model/accommodation.model";
 import { Request, Response, NextFunction } from "express";
+import data from "../data/data.json";
 
-let getAllAccommodation = async (
-  _req: Request,
+let getLocation = (_req: Request, res: Response) => {
+  res.status(200).json(data);
+};
+
+let getAllAccommodation = (_req: Request, res: Response) => {
+  AccommodationModel.find({})
+    .then((data) => {
+      res.status(200).json({ data });
+    })
+    .catch((error) => {
+      console.log(error);
+      res.status(400).json({ code: 1, message: "server error!" });
+    });
+};
+
+let getPageAccommodation = async (
+  req: Request,
   res: Response,
   _next: NextFunction
 ) => {
-  const AllAccommodation: IAccommodation[] = await AccommodationModel.find(
-    {}
-  ).exec();
-  res.status(200).json(AllAccommodation);
+  const page = parseInt(req.params.page);
+  console.log(page);
+
+  const PAGE_SIZE = 4;
+  if (page) {
+    const totalDocument = await AccommodationModel.countDocuments().exec();
+    AccommodationModel.find({})
+      .skip((page - 1) * PAGE_SIZE)
+      .limit(4)
+      .then((data) => {
+        res.status(200).json({ totalDocument, data });
+      })
+      .catch((error) => {
+        console.log(error);
+
+        res.status(400).json({ code: 1, message: "server error!" });
+      });
+  } else {
+    res.status(400).json({ code: 1, message: "server error!" });
+  }
 };
-let createAccommodation = async (
+let createAccommodation = (
   req: Request,
   res: Response,
   _next: NextFunction
@@ -27,7 +59,7 @@ let createAccommodation = async (
     price,
     phone,
   }: IAccommodation = req.body;
-  await AccommodationModel.create({
+  AccommodationModel.create({
     userId,
     stateRoom,
     imageRoom,
@@ -61,6 +93,8 @@ let getAccommodationById = async (
   res.status(200).json(listAccommodation);
 };
 export default {
+  getLocation,
+  getPageAccommodation,
   getAllAccommodation,
   createAccommodation,
   getAccommodationById,
