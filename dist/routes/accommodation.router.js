@@ -8,7 +8,7 @@ const accommodation_controller_1 = __importDefault(require("../controller/accomm
 const router = express_1.default.Router();
 router.get("/page=:page", accommodation_controller_1.default.getPageAccommodation);
 router.get("/get-all", accommodation_controller_1.default.getAllAccommodation);
-router.get("/get-room/:id", accommodation_controller_1.default.getAccommodationById);
+router.get("/get-room/:userName/page=:page", accommodation_controller_1.default.getAccommodationById);
 router.post("/create-room", accommodation_controller_1.default.createAccommodation);
 router.get("/location", accommodation_controller_1.default.getLocation);
 exports.default = router;

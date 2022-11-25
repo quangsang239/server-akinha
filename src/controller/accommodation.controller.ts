@@ -24,12 +24,22 @@ let getPageAccommodation = async (
   _next: NextFunction
 ) => {
   const page = parseInt(req.params.page);
-  console.log(page);
-
   const PAGE_SIZE = 4;
+  const { district, category, sex, price } = req.query;
+  console.log({ district, category, sex, price });
   if (page) {
-    const totalDocument = await AccommodationModel.countDocuments().exec();
-    AccommodationModel.find({})
+    const totalDocument = await AccommodationModel.countDocuments({
+      addressRoom: { $regex: district },
+      category: { $regex: category },
+      sex: { $regex: sex },
+      price: { $lte: Number(price) },
+    }).exec();
+    AccommodationModel.find({
+      addressRoom: { $regex: district },
+      category: { $regex: category },
+      sex: { $regex: sex },
+      price: { $lte: Number(price) },
+    })
       .skip((page - 1) * PAGE_SIZE)
       .limit(4)
       .then((data) => {
@@ -50,29 +60,48 @@ let createAccommodation = (
   _next: NextFunction
 ) => {
   const {
-    userId,
+    userName,
     stateRoom,
     imageRoom,
     addressRoom,
     latitude,
     longitude,
     price,
-    phone,
+    nameRoom,
+    area,
+    deposit,
+    aop,
+    utilities,
+    electricity,
+    water,
+    phoneNumber,
+    name,
+    sex,
+    category,
   }: IAccommodation = req.body;
   AccommodationModel.create({
-    userId,
+    userName,
     stateRoom,
     imageRoom,
     addressRoom,
     latitude,
     longitude,
     price,
-    phone,
+    nameRoom,
+    area,
+    deposit,
+    aop,
+    utilities,
+    electricity,
+    water,
+    phoneNumber,
+    name,
+    sex,
+    category,
+    createAt: Date.now(),
   })
     .then(() => {
-      res
-        .status(200)
-        .json({ code: 0, message: "Create Accommodation successfully!" });
+      res.status(200).json({ code: 0, message: "Thêm phòng mới thành công!" });
     })
     .catch((error) => {
       res
@@ -86,11 +115,20 @@ let getAccommodationById = async (
   res: Response,
   _next: NextFunction
 ) => {
-  const { userId } = req.params;
-  const listAccommodation: IAccommodation[] = await AccommodationModel.find({
-    userId,
+  const { userName, page } = req.params;
+  const totalDocument = await AccommodationModel.countDocuments({
+    userName,
   }).exec();
-  res.status(200).json(listAccommodation);
+  AccommodationModel.find({ userName })
+    .skip((Number(page) - 1) * 3)
+    .limit(3)
+    .then((data) => {
+      res.status(200).json({ totalDocument, data });
+    })
+    .catch((error) => {
+      console.log(error);
+      res.status(500).json("Server error!");
+    });
 };
 export default {
   getLocation,

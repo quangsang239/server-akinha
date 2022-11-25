@@ -12,5 +12,7 @@ router.post("/create-user", user_controller_1.default.createUser);
 router.post("/get-access-token", user_controller_1.default.getNewAccessToken);
 router.get("/verify/:userId/:uniqueString", user_controller_1.default.userVerify);
 router.post("/verified", user_controller_1.default.sendVerify);
+router.get("/get-profile/:userName", authRequest_1.default, user_controller_1.default.getUser);
+router.post("/update-profile", authRequest_1.default, user_controller_1.default.updateUser);
 exports.default = router;
 //# sourceMappingURL=user.router.js.map
