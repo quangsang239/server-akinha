@@ -20,11 +20,22 @@ let getAllAccommodation = (_req, res) => {
 };
 let getPageAccommodation = async (req, res, _next) => {
     const page = parseInt(req.params.page);
-    console.log(page);
     const PAGE_SIZE = 4;
+    const { district, category, sex, price } = req.query;
+    console.log({ district, category, sex, price });
     if (page) {
-        const totalDocument = await accommodation_model_1.default.countDocuments().exec();
-        accommodation_model_1.default.find({})
+        const totalDocument = await accommodation_model_1.default.countDocuments({
+            addressRoom: { $regex: district },
+            category: { $regex: category },
+            sex: { $regex: sex },
+            price: { $lte: Number(price) },
+        }).exec();
+        accommodation_model_1.default.find({
+            addressRoom: { $regex: district },
+            category: { $regex: category },
+            sex: { $regex: sex },
+            price: { $lte: Number(price) },
+        })
             .skip((page - 1) * PAGE_SIZE)
             .limit(4)
             .then((data) => {
@@ -40,21 +51,30 @@ let getPageAccommodation = async (req, res, _next) => {
     }
 };
 let createAccommodation = (req, res, _next) => {
-    const { userId, stateRoom, imageRoom, addressRoom, latitude, longitude, price, phone, } = req.body;
+    const { userName, stateRoom, imageRoom, addressRoom, latitude, longitude, price, nameRoom, area, deposit, aop, utilities, electricity, water, phoneNumber, name, sex, category, } = req.body;
     accommodation_model_1.default.create({
-        userId,
+        userName,
         stateRoom,
         imageRoom,
         addressRoom,
         latitude,
         longitude,
         price,
-        phone,
+        nameRoom,
+        area,
+        deposit,
+        aop,
+        utilities,
+        electricity,
+        water,
+        phoneNumber,
+        name,
+        sex,
+        category,
+        createAt: Date.now(),
     })
         .then(() => {
-        res
-            .status(200)
-            .json({ code: 0, message: "Create Accommodation successfully!" });
+        res.status(200).json({ code: 0, message: "Thêm phòng mới thành công!" });
     })
         .catch((error) => {
         res
@@ -64,11 +84,20 @@ let createAccommodation = (req, res, _next) => {
     });
 };
 let getAccommodationById = async (req, res, _next) => {
-    const { userId } = req.params;
-    const listAccommodation = await accommodation_model_1.default.find({
-        userId,
+    const { userName, page } = req.params;
+    const totalDocument = await accommodation_model_1.default.countDocuments({
+        userName,
     }).exec();
-    res.status(200).json(listAccommodation);
+    accommodation_model_1.default.find({ userName })
+        .skip((Number(page) - 1) * 3)
+        .limit(3)
+        .then((data) => {
+        res.status(200).json({ totalDocument, data });
+    })
+        .catch((error) => {
+        console.log(error);
+        res.status(500).json("Server error!");
+    });
 };
 exports.default = {
     getLocation,

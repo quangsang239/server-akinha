@@ -34,8 +34,8 @@ transporter.verify((error, success) => {
   }
 });
 
-const sendVerificationEmail = ({ _id, email }: IUser) => {
-  const currentUrl = "http://localhost:1305/";
+const sendVerificationEmail = ({ _id, email }: any) => {
+  const currentUrl = "http://localhost:1305/api/";
   const uniqueString = uuidV4() + _id;
   const mailOptions = {
     from: EMAIL_USERNAME,
@@ -96,26 +96,43 @@ const getAllUser = async (
   res.status(200).json(allUser);
 };
 const getUser = async (req: Request, res: Response, _next: NextFunction) => {
-  const { email } = req.body;
-  const user: IUser | null = await UserModel.findOne(email).exec();
-  res.status(200).json(user);
+  const { userName } = req.params;
+  const user: IUser | null = await UserModel.findOne({ userName }).exec();
+  if (user) {
+    res.status(200).json({
+      code: 0,
+      user: {
+        email: user.email,
+        name: user.name,
+        phoneNumber: user.phoneNumber,
+        verified: user.verified,
+        userName: user.userName,
+      },
+    });
+  } else {
+    res.status(400).json({ code: 1, message: "Không tìm thấy người dùng!" });
+  }
 };
 const createUser = async (
   req: Request,
   res: Response,
   _next: NextFunction
 ): Promise<any> => {
-  const { email, userName, password }: IUser = req.body;
+  const { email, userName, password, phoneNumber, name }: IUser = req.body;
   console.log({ email, userName, password });
   const checkUser: IUser | null = await UserModel.findOne({
-    userName: userName.toLowerCase(),
+    userName: userName,
   }).exec();
   if (checkUser)
-    return res.status(400).json({ message: "user is exited!", code: 2 });
+    return res
+      .status(400)
+      .json({ message: "Tài khoản đã được đăng ký!", code: 2 });
   const hashPassword = bcrypt.hashSync(password, SALT_ROUNDS);
   await UserModel.create({
     email,
-    userName: userName.toLowerCase(),
+    name,
+    phoneNumber,
+    userName: userName,
     password: hashPassword,
     refreshToken: "",
     verified: false,
@@ -123,7 +140,7 @@ const createUser = async (
     .then((result) => {
       sendVerificationEmail(result);
       return res.status(200).json({
-        message: "create user success!",
+        message: "Tạo tài khoản thành công tiến hành đăng nhập!",
         code: 0,
       });
     })
@@ -141,29 +158,47 @@ const loginUser = async (req: Request, res: Response) => {
     const user: IUser | null = await UserModel.findOne({
       userName,
     }).exec();
+    console.log(user);
+
     if (user) {
-      bcrypt.compare(password, user.password).then(async () => {
-        const accessToken = jwt.sign({ userId: user._id }, SECRET_KEY, {
-          expiresIn: "24h",
+      bcrypt
+        .compare(password, user.password)
+        .then(async (result) => {
+          if (result) {
+            const accessToken = jwt.sign({ userId: user._id }, SECRET_KEY, {
+              expiresIn: "24h",
+            });
+            const refreshToken = jwt.sign({ userId: user._id }, REFRESH_KEY);
+            await UserModel.findOneAndUpdate(
+              { _id: user._id },
+              { refreshToken }
+            )
+              .then(() => {
+                console.log("create refresh token success!");
+              })
+              .catch((error) => {
+                console.log(error);
+              });
+            res.status(200).json({
+              code: 0,
+              message: "Đăng nhập thành công!",
+              accessToken: accessToken,
+              refreshToken: refreshToken,
+              userName,
+              name: user.name,
+              phoneNumber: user.phoneNumber,
+              verified: user.verified,
+              expireAt: Date.now() + 24 * 60 * 60 * 1000,
+            });
+          } else
+            res
+              .status(400)
+              .json({ code: 1, message: "Sai tài khoản hoặc mật khẩu!" });
+        })
+        .catch((error) => {
+          console.log(error);
+          res.status(500).json("Server process failed!");
         });
-        const refreshToken = jwt.sign({ userId: user._id }, REFRESH_KEY);
-        await UserModel.findOneAndUpdate({ _id: user._id }, { refreshToken })
-          .then(() => {
-            console.log("create refresh token success!");
-          })
-          .catch((error) => {
-            console.log(error);
-          });
-        res.status(200).json({
-          code: 0,
-          message: "Đăng nhập thành công!",
-          accessToken: accessToken,
-          refreshToken: refreshToken,
-          userName,
-          verified: user.verified,
-          expireAt: Date.now() + 24 * 60 * 60 * 1000,
-        });
-      });
     } else
       res
         .status(400)
@@ -227,20 +262,24 @@ const userVerify = (req: Request, res: Response) => {
               UserModel.deleteOne({ _id: userId })
                 .then(() => {
                   let message = "Link has expired. Please signup again";
-                  res.redirect(`/user/verified/error=true&message=${message}`);
+                  res.redirect(
+                    `/api/user/verified/error=true&message=${message}`
+                  );
                 })
                 .catch((error) => {
                   console.log(error);
                   let message =
                     "Clearing user with expired unique string failed";
-                  res.redirect(`/user/verified/error=true&message=${message}`);
+                  res.redirect(
+                    `/api/user/verified/error=true&message=${message}`
+                  );
                 });
             })
             .catch((error) => {
               console.log(error);
               let message =
                 "An error occurred while clearing for expired user verification record";
-              res.redirect(`/user/verified/error=true&message=${message}`);
+              res.redirect(`/api/user/verified/error=true&message=${message}`);
             });
         } else {
           bcrypt
@@ -260,7 +299,7 @@ const userVerify = (req: Request, res: Response) => {
                         let message =
                           "An error while finalizing successful verification";
                         res.redirect(
-                          `/user/verified/error=true&message=${message}`
+                          `/api/user/verified/error=true&message=${message}`
                         );
                       });
                   })
@@ -268,36 +307,86 @@ const userVerify = (req: Request, res: Response) => {
                     console.log(error);
                     let message = "An error while updating user";
                     res.redirect(
-                      `/user/verified/error=true&message=${message}`
+                      `/api/user/verified/error=true&message=${message}`
                     );
                   });
               } else {
                 let message =
                   "invalid verification details passed. Check your inbox.";
-                res.redirect(`/user/verified/error=true&message=${message}`);
+                res.redirect(
+                  `/api/user/verified/error=true&message=${message}`
+                );
               }
             })
             .catch((error) => {
               console.log(error);
               let message = "An error occurred while comparing unique strings";
-              res.redirect(`/user/verified/error=true&message=${message}`);
+              res.redirect(`/api/user/verified/error=true&message=${message}`);
             });
         }
       } else {
         let message =
           "Account record doesn't exit or has been verify already. Please signup and login.";
-        res.redirect(`/user/verified/error=true&message=${message}`);
+        res.redirect(`/api/user/verified/error=true&message=${message}`);
       }
     })
     .catch((error) => {
       console.log(error);
       let message =
         "An error occurred while checking for exiting user verification record";
-      res.redirect(`/user/verified/error=true&message=${message}`);
+      res.redirect(`/api/user/verified/error=true&message=${message}`);
     });
 };
 const sendVerify = (_req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, "./../views/verified.html"));
+};
+const updateUser = async (req: Request, res: Response) => {
+  const { userName, email, changeEmail, name, phoneNumber } = req.body;
+  // const user: IUser | null = await UserModel.findOne({ userName }).exec();
+  if (changeEmail) {
+    UserModel.findOneAndUpdate(
+      { userName },
+      {
+        email,
+        name,
+        phoneNumber,
+      }
+    )
+      .then((result) => {
+        if (result) {
+          sendVerificationEmail({ _id: result._id, email: email });
+          res
+            .status(200)
+            .json({ code: 0, message: "Cập nhật tài khoản thành công!" });
+        } else {
+          res
+            .status(200)
+            .json({ code: 2, message: "Không tìm thấy tài khoản!" });
+        }
+      })
+      .catch((error) => {
+        console.log(error);
+        res.status(500).json({ code: 1, message: "Lỗi server!" });
+      });
+  } else {
+    UserModel.findOneAndUpdate(
+      { userName },
+      {
+        email,
+        name,
+        phoneNumber,
+      }
+    )
+      .then(() => {
+        res
+          .status(200)
+          .json({ code: 0, message: "Cập nhật tài khoản thành công!" });
+      })
+      .catch((error) => {
+        console.log(error);
+        res.status(500).json({ code: 1, message: "Lỗi server!" });
+      });
+  }
 };
 export default {
   createUser,
@@ -307,4 +396,5 @@ export default {
   getNewAccessToken,
   userVerify,
   sendVerify,
+  updateUser,
 };
