@@ -4,6 +4,8 @@ import { SECRET_KEY } from "../config/config";
 const authRequest = (req: Request, res: Response, next: NextFunction) => {
   try {
     const myHeader = req.headers.authorization;
+    console.log(req.headers.authorization);
+
     if (myHeader) {
       const token = myHeader.split(" ")[1];
       const accessToken = jwt.verify(token, SECRET_KEY);
