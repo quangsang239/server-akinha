@@ -119,7 +119,6 @@ const createUser = async (
   _next: NextFunction
 ): Promise<any> => {
   const { email, userName, password, phoneNumber, name }: IUser = req.body;
-  console.log({ email, userName, password });
   const checkUser: IUser | null = await UserModel.findOne({
     userName: userName,
   }).exec();
@@ -174,22 +173,21 @@ const loginUser = async (req: Request, res: Response) => {
               { refreshToken }
             )
               .then(() => {
-                console.log("create refresh token success!");
+                res.status(200).json({
+                  code: 0,
+                  message: "Đăng nhập thành công!",
+                  accessToken: accessToken,
+                  refreshToken: refreshToken,
+                  userName,
+                  name: user.name,
+                  phoneNumber: user.phoneNumber,
+                  verified: user.verified,
+                  expireAt: Date.now() + 24 * 60 * 60 * 1000,
+                });
               })
               .catch((error) => {
                 console.log(error);
               });
-            res.status(200).json({
-              code: 0,
-              message: "Đăng nhập thành công!",
-              accessToken: accessToken,
-              refreshToken: refreshToken,
-              userName,
-              name: user.name,
-              phoneNumber: user.phoneNumber,
-              verified: user.verified,
-              expireAt: Date.now() + 24 * 60 * 60 * 1000,
-            });
           } else
             res
               .status(400)
@@ -211,7 +209,6 @@ const loginUser = async (req: Request, res: Response) => {
 const getNewAccessToken = async (req: Request, res: Response) => {
   try {
     const { token } = req.cookies;
-    console.log(req.cookies);
     const { refreshToken, userName } = req.body;
     jwt.verify(
       token,
@@ -251,7 +248,6 @@ const userVerify = (req: Request, res: Response) => {
 
   UserVerifiCationModel.find({ userId })
     .then((result) => {
-      console.log({ result });
       if (result.length > 0) {
         const { expiresAt }: IUserVerification = result[0];
         const hashedUniqueString = result[0].uniqueString;
