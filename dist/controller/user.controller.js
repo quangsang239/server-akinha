@@ -104,7 +104,6 @@ const getUser = async (req, res, _next) => {
 };
 const createUser = async (req, res, _next) => {
     const { email, userName, password, phoneNumber, name } = req.body;
-    console.log({ email, userName, password });
     const checkUser = await user_model_1.default.findOne({
         userName: userName,
     }).exec();
@@ -195,7 +194,6 @@ const loginUser = async (req, res) => {
 const getNewAccessToken = async (req, res) => {
     try {
         const { token } = req.cookies;
-        console.log(req.cookies);
         const { refreshToken, userName } = req.body;
         jsonwebtoken_1.default.verify(token, config_1.SECRET_KEY, { ignoreExpiration: true }, async (err, decoded) => {
             if (err) {
@@ -232,7 +230,6 @@ const userVerify = (req, res) => {
     const uniqueString = req.params.uniqueString;
     userVerification_1.default.find({ userId })
         .then((result) => {
-        console.log({ result });
         if (result.length > 0) {
             const { expiresAt } = result[0];
             const hashedUniqueString = result[0].uniqueString;

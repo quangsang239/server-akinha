@@ -22,7 +22,6 @@ let getPageAccommodation = async (req, res, _next) => {
     const page = parseInt(req.params.page);
     const PAGE_SIZE = 4;
     const { district, category, sex, price } = req.query;
-    console.log({ district, category, sex, price });
     if (page) {
         const totalDocument = await accommodation_model_1.default.countDocuments({
             addressRoom: { $regex: district },
@@ -104,7 +103,6 @@ const getRoom = (req, res) => {
     if (_id) {
         accommodation_model_1.default.findById({ _id })
             .then((result) => {
-            console.log(result);
             res.status(200).json({ result });
         })
             .catch((error) => {
@@ -115,27 +113,6 @@ const getRoom = (req, res) => {
 };
 const updateRoom = (req, res) => {
     const { userName, stateRoom, imageRoom, addressRoom, latitude, longitude, price, nameRoom, area, deposit, aop, utilities, electricity, water, phoneNumber, name, sex, category, _id, } = req.body;
-    console.log({
-        userName,
-        stateRoom,
-        imageRoom,
-        addressRoom,
-        latitude,
-        longitude,
-        price,
-        nameRoom,
-        area,
-        deposit,
-        aop,
-        utilities,
-        electricity,
-        water,
-        phoneNumber,
-        name,
-        sex,
-        category,
-        _id,
-    });
     accommodation_model_1.default.findByIdAndUpdate({ _id }, {
         userName,
         stateRoom,
