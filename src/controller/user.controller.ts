@@ -173,22 +173,21 @@ const loginUser = async (req: Request, res: Response) => {
               { refreshToken }
             )
               .then(() => {
-                console.log("create refresh token success!");
+                res.status(200).json({
+                  code: 0,
+                  message: "Đăng nhập thành công!",
+                  accessToken: accessToken,
+                  refreshToken: refreshToken,
+                  userName,
+                  name: user.name,
+                  phoneNumber: user.phoneNumber,
+                  verified: user.verified,
+                  expireAt: Date.now() + 24 * 60 * 60 * 1000,
+                });
               })
               .catch((error) => {
                 console.log(error);
               });
-            res.status(200).json({
-              code: 0,
-              message: "Đăng nhập thành công!",
-              accessToken: accessToken,
-              refreshToken: refreshToken,
-              userName,
-              name: user.name,
-              phoneNumber: user.phoneNumber,
-              verified: user.verified,
-              expireAt: Date.now() + 24 * 60 * 60 * 1000,
-            });
           } else
             res
               .status(400)

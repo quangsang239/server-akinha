@@ -154,21 +154,20 @@ const loginUser = async (req, res) => {
                     const refreshToken = jsonwebtoken_1.default.sign({ userId: user._id }, config_1.REFRESH_KEY);
                     await user_model_1.default.findOneAndUpdate({ _id: user._id }, { refreshToken })
                         .then(() => {
-                        console.log("create refresh token success!");
+                        res.status(200).json({
+                            code: 0,
+                            message: "Đăng nhập thành công!",
+                            accessToken: accessToken,
+                            refreshToken: refreshToken,
+                            userName,
+                            name: user.name,
+                            phoneNumber: user.phoneNumber,
+                            verified: user.verified,
+                            expireAt: Date.now() + 24 * 60 * 60 * 1000,
+                        });
                     })
                         .catch((error) => {
                         console.log(error);
-                    });
-                    res.status(200).json({
-                        code: 0,
-                        message: "Đăng nhập thành công!",
-                        accessToken: accessToken,
-                        refreshToken: refreshToken,
-                        userName,
-                        name: user.name,
-                        phoneNumber: user.phoneNumber,
-                        verified: user.verified,
-                        expireAt: Date.now() + 24 * 60 * 60 * 1000,
                     });
                 }
                 else
