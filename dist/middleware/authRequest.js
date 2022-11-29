@@ -8,7 +8,6 @@ const config_1 = require("../config/config");
 const authRequest = (req, res, next) => {
     try {
         const myHeader = req.headers.authorization;
-        console.log(req.headers.authorization);
         if (myHeader) {
             const token = myHeader.split(" ")[1];
             const accessToken = jsonwebtoken_1.default.verify(token, config_1.SECRET_KEY);

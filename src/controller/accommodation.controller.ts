@@ -130,10 +130,113 @@ let getAccommodationById = async (
       res.status(500).json("Server error!");
     });
 };
+const getRoom = (req: Request, res: Response) => {
+  const { _id } = req.params;
+  if (_id) {
+    AccommodationModel.findById({ _id })
+      .then((result) => {
+        console.log(result);
+        res.status(200).json({ result });
+      })
+      .catch((error) => {
+        console.log(error);
+        res.status(500).json("server error!");
+      });
+  }
+};
+const updateRoom = (req: Request, res: Response) => {
+  const {
+    userName,
+    stateRoom,
+    imageRoom,
+    addressRoom,
+    latitude,
+    longitude,
+    price,
+    nameRoom,
+    area,
+    deposit,
+    aop,
+    utilities,
+    electricity,
+    water,
+    phoneNumber,
+    name,
+    sex,
+    category,
+    _id,
+  }: IAccommodation = req.body;
+  console.log({
+    userName,
+    stateRoom,
+    imageRoom,
+    addressRoom,
+    latitude,
+    longitude,
+    price,
+    nameRoom,
+    area,
+    deposit,
+    aop,
+    utilities,
+    electricity,
+    water,
+    phoneNumber,
+    name,
+    sex,
+    category,
+    _id,
+  });
+
+  AccommodationModel.findByIdAndUpdate(
+    { _id },
+    {
+      userName,
+      stateRoom,
+      imageRoom,
+      addressRoom,
+      latitude,
+      longitude,
+      price,
+      nameRoom,
+      area,
+      deposit,
+      aop,
+      utilities,
+      electricity,
+      water,
+      phoneNumber,
+      name,
+      sex,
+      category,
+    }
+  )
+    .then(() => {
+      res.status(200).json({ code: 0, message: "Cập nhật phòng thành công!" });
+    })
+    .catch((error) => {
+      console.log(error);
+      res.status(500).json({ code: 1, message: "Lỗi server!" });
+    });
+};
+const deleteRoom = (req: Request, res: Response) => {
+  const { _id } = req.params;
+  AccommodationModel.findByIdAndDelete({ _id })
+    .then(() => {
+      res.status(200).json({ code: 0, message: "Xoá phòng thành công!" });
+    })
+    .catch((error) => {
+      console.log(error);
+      res.status(500).json({ code: 1, message: "Xoá phòng thất bại" });
+    });
+};
 export default {
   getLocation,
   getPageAccommodation,
   getAllAccommodation,
   createAccommodation,
   getAccommodationById,
+  getRoom,
+  updateRoom,
+  deleteRoom,
 };

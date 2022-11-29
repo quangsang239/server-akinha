@@ -99,11 +99,90 @@ let getAccommodationById = async (req, res, _next) => {
         res.status(500).json("Server error!");
     });
 };
+const getRoom = (req, res) => {
+    const { _id } = req.params;
+    if (_id) {
+        accommodation_model_1.default.findById({ _id })
+            .then((result) => {
+            console.log(result);
+            res.status(200).json({ result });
+        })
+            .catch((error) => {
+            console.log(error);
+            res.status(500).json("server error!");
+        });
+    }
+};
+const updateRoom = (req, res) => {
+    const { userName, stateRoom, imageRoom, addressRoom, latitude, longitude, price, nameRoom, area, deposit, aop, utilities, electricity, water, phoneNumber, name, sex, category, _id, } = req.body;
+    console.log({
+        userName,
+        stateRoom,
+        imageRoom,
+        addressRoom,
+        latitude,
+        longitude,
+        price,
+        nameRoom,
+        area,
+        deposit,
+        aop,
+        utilities,
+        electricity,
+        water,
+        phoneNumber,
+        name,
+        sex,
+        category,
+        _id,
+    });
+    accommodation_model_1.default.findByIdAndUpdate({ _id }, {
+        userName,
+        stateRoom,
+        imageRoom,
+        addressRoom,
+        latitude,
+        longitude,
+        price,
+        nameRoom,
+        area,
+        deposit,
+        aop,
+        utilities,
+        electricity,
+        water,
+        phoneNumber,
+        name,
+        sex,
+        category,
+    })
+        .then(() => {
+        res.status(200).json({ code: 0, message: "Cập nhật phòng thành công!" });
+    })
+        .catch((error) => {
+        console.log(error);
+        res.status(500).json({ code: 1, message: "Lỗi server!" });
+    });
+};
+const deleteRoom = (req, res) => {
+    const { _id } = req.params;
+    accommodation_model_1.default.findByIdAndDelete({ _id })
+        .then(() => {
+        res.status(200).json({ code: 0, message: "Xoá phòng thành công!" });
+    })
+        .catch((error) => {
+        console.log(error);
+        res.status(500).json({ code: 1, message: "Xoá phòng thất bại" });
+    });
+};
 exports.default = {
     getLocation,
     getPageAccommodation,
     getAllAccommodation,
     createAccommodation,
     getAccommodationById,
+    getRoom,
+    updateRoom,
+    deleteRoom,
 };
 //# sourceMappingURL=accommodation.controller.js.map
