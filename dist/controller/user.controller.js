@@ -1,10 +1,34 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const user_model_1 = __importDefault(require("../model/user.model"));
 const userVerification_1 = __importDefault(require("../model/userVerification"));
+const _ = __importStar(require("lodash"));
 const config_1 = require("../config/config");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
@@ -81,7 +105,26 @@ const sendVerificationEmail = ({ _id, email }) => {
 };
 const getAllUser = async (_req, res, _next) => {
     const allUser = await user_model_1.default.find({}).exec();
-    res.status(200).json(allUser);
+    let newUser = [];
+    for (const user of allUser) {
+        console.log(_.pick(user, [
+            "_id",
+            "email",
+            "userName",
+            "name",
+            "phoneNumber",
+            "verified",
+        ]));
+        newUser.push(_.pick(user, [
+            "_id",
+            "email",
+            "userName",
+            "name",
+            "phoneNumber",
+            "verified",
+        ]));
+    }
+    res.status(200).json(newUser);
 };
 const getUser = async (req, res, _next) => {
     const { userName } = req.params;
@@ -142,7 +185,6 @@ const loginUser = async (req, res) => {
         const user = await user_model_1.default.findOne({
             userName,
         }).exec();
-        console.log(user);
         if (user) {
             bcrypt_1.default
                 .compare(password, user.password)
@@ -228,12 +270,13 @@ const userVerify = (req, res) => {
     const userId = req.params.userId;
     const uniqueString = req.params.uniqueString;
     userVerification_1.default.find({ userId })
+        .sort({ createAt: "ascending" })
         .then((result) => {
         if (result.length > 0) {
-            const { expiresAt } = result[0];
-            const hashedUniqueString = result[0].uniqueString;
+            const { expiresAt } = result[result.length - 1];
+            const hashedUniqueString = result[result.length - 1].uniqueString;
             if (expiresAt.getTime() < Date.now()) {
-                userVerification_1.default.deleteOne({ userId })
+                userVerification_1.default.deleteMany({ userId })
                     .then(() => {
                     user_model_1.default.deleteOne({ _id: userId })
                         .then(() => {
@@ -259,7 +302,7 @@ const userVerify = (req, res) => {
                     if (result) {
                         user_model_1.default.updateOne({ _id: userId }, { verified: true })
                             .then(() => {
-                            userVerification_1.default.deleteOne({ userId })
+                            userVerification_1.default.deleteMany({ userId })
                                 .then(() => {
                                 res.sendFile(path_1.default.join(__dirname, "./../views/verified.html"));
                             })
@@ -308,6 +351,7 @@ const updateUser = async (req, res) => {
             email,
             name,
             phoneNumber,
+            verified: false,
         })
             .then((result) => {
             if (result) {
@@ -344,6 +388,65 @@ const updateUser = async (req, res) => {
         });
     }
 };
+const newPassword = async (req, res) => {
+    const { userName, currentPassword, newPassword } = req.body;
+    await user_model_1.default.findOne({ userName }).then((result) => {
+        if (result) {
+            bcrypt_1.default.compare(currentPassword, result.password).then(async (value) => {
+                if (value) {
+                    const hashNewPassword = bcrypt_1.default.hashSync(newPassword, config_1.SALT_ROUNDS);
+                    await user_model_1.default.findOneAndUpdate({ userName }, {
+                        password: hashNewPassword,
+                    })
+                        .then(() => {
+                        res
+                            .status(200)
+                            .json({ code: 0, message: "Đổi mật khẩu thành công!" });
+                    })
+                        .catch(() => {
+                        res.status(500).json({ code: 1, message: "Server Lỗi!" });
+                    });
+                }
+                else {
+                    res
+                        .status(200)
+                        .json({ code: 2, message: "Mật khẩu hiện tại không đúng" });
+                }
+            });
+        }
+        else {
+            res.status(500).json({ code: 1, message: "Không tìm thấy tài khoản!" });
+        }
+    });
+};
+const deleteUser = (req, res) => {
+    const { _id } = req.body;
+    user_model_1.default.findByIdAndDelete({ _id })
+        .then(() => {
+        res.status(200).json({ code: 0, message: "Xoá người dùng thành công!" });
+    })
+        .catch((error) => {
+        console.log(error);
+        res.status(500).json({ code: 1, message: "Xoá người dùng thất bại" });
+    });
+};
+const sendNewVerify = (req, res) => {
+    const { userName, email } = req.body;
+    user_model_1.default.findOne({ userName })
+        .then((result) => {
+        if (result) {
+            sendVerificationEmail({ _id: result._id, email });
+            res.status(200).json("Gửi email thành công!");
+        }
+        else {
+            res.status(400).json("Gửi email không thành công!");
+        }
+    })
+        .catch((error) => {
+        console.log(error);
+        res.status(500).json("Lỗi server!");
+    });
+};
 exports.default = {
     createUser,
     getAllUser,
@@ -353,5 +456,8 @@ exports.default = {
     userVerify,
     sendVerify,
     updateUser,
+    newPassword,
+    deleteUser,
+    sendNewVerify,
 };
 //# sourceMappingURL=user.controller.js.map

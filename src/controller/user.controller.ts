@@ -2,6 +2,7 @@ import { IUser, IUserVerification } from "../types/index";
 import UserModel from "../model/user.model";
 import UserVerifiCationModel from "../model/userVerification";
 import { Request, Response, NextFunction } from "express";
+import * as _ from "lodash";
 import {
   SECRET_KEY,
   REFRESH_KEY,
@@ -93,7 +94,32 @@ const getAllUser = async (
   _next: NextFunction
 ) => {
   const allUser: IUser[] = await UserModel.find({}).exec();
-  res.status(200).json(allUser);
+  let newUser: any = [];
+  for (const user of allUser) {
+    console.log(
+      _.pick(user, [
+        "_id",
+        "email",
+        "userName",
+        "name",
+        "phoneNumber",
+        "verified",
+      ])
+    );
+
+    newUser.push(
+      _.pick(user, [
+        "_id",
+        "email",
+        "userName",
+        "name",
+        "phoneNumber",
+        "verified",
+      ])
+    );
+  }
+
+  res.status(200).json(newUser);
 };
 const getUser = async (req: Request, res: Response, _next: NextFunction) => {
   const { userName } = req.params;
@@ -157,7 +183,6 @@ const loginUser = async (req: Request, res: Response) => {
     const user: IUser | null = await UserModel.findOne({
       userName,
     }).exec();
-    console.log(user);
 
     if (user) {
       bcrypt
@@ -247,13 +272,15 @@ const userVerify = (req: Request, res: Response) => {
   const uniqueString = req.params.uniqueString;
 
   UserVerifiCationModel.find({ userId })
+    .sort({ createAt: "ascending" })
+
     .then((result) => {
       if (result.length > 0) {
-        const { expiresAt }: IUserVerification = result[0];
-        const hashedUniqueString = result[0].uniqueString;
+        const { expiresAt }: IUserVerification = result[result.length - 1];
+        const hashedUniqueString = result[result.length - 1].uniqueString;
 
         if (expiresAt.getTime() < Date.now()) {
-          UserVerifiCationModel.deleteOne({ userId })
+          UserVerifiCationModel.deleteMany({ userId })
             .then(() => {
               UserModel.deleteOne({ _id: userId })
                 .then(() => {
@@ -284,7 +311,7 @@ const userVerify = (req: Request, res: Response) => {
               if (result) {
                 UserModel.updateOne({ _id: userId }, { verified: true })
                   .then(() => {
-                    UserVerifiCationModel.deleteOne({ userId })
+                    UserVerifiCationModel.deleteMany({ userId })
                       .then(() => {
                         res.sendFile(
                           path.join(__dirname, "./../views/verified.html")
@@ -346,6 +373,7 @@ const updateUser = async (req: Request, res: Response) => {
         email,
         name,
         phoneNumber,
+        verified: false,
       }
     )
       .then((result) => {
@@ -384,6 +412,65 @@ const updateUser = async (req: Request, res: Response) => {
       });
   }
 };
+const newPassword = async (req: Request, res: Response) => {
+  const { userName, currentPassword, newPassword } = req.body;
+  await UserModel.findOne({ userName }).then((result) => {
+    if (result) {
+      bcrypt.compare(currentPassword, result.password).then(async (value) => {
+        if (value) {
+          const hashNewPassword = bcrypt.hashSync(newPassword, SALT_ROUNDS);
+          await UserModel.findOneAndUpdate(
+            { userName },
+            {
+              password: hashNewPassword,
+            }
+          )
+            .then(() => {
+              res
+                .status(200)
+                .json({ code: 0, message: "Đổi mật khẩu thành công!" });
+            })
+            .catch(() => {
+              res.status(500).json({ code: 1, message: "Server Lỗi!" });
+            });
+        } else {
+          res
+            .status(200)
+            .json({ code: 2, message: "Mật khẩu hiện tại không đúng" });
+        }
+      });
+    } else {
+      res.status(500).json({ code: 1, message: "Không tìm thấy tài khoản!" });
+    }
+  });
+};
+const deleteUser = (req: Request, res: Response) => {
+  const { _id } = req.body;
+  UserModel.findByIdAndDelete({ _id })
+    .then(() => {
+      res.status(200).json({ code: 0, message: "Xoá người dùng thành công!" });
+    })
+    .catch((error) => {
+      console.log(error);
+      res.status(500).json({ code: 1, message: "Xoá người dùng thất bại" });
+    });
+};
+const sendNewVerify = (req: Request, res: Response) => {
+  const { userName, email } = req.body;
+  UserModel.findOne({ userName })
+    .then((result) => {
+      if (result) {
+        sendVerificationEmail({ _id: result._id, email });
+        res.status(200).json("Gửi email thành công!");
+      } else {
+        res.status(400).json("Gửi email không thành công!");
+      }
+    })
+    .catch((error) => {
+      console.log(error);
+      res.status(500).json("Lỗi server!");
+    });
+};
 export default {
   createUser,
   getAllUser,
@@ -393,4 +480,7 @@ export default {
   userVerify,
   sendVerify,
   updateUser,
+  newPassword,
+  deleteUser,
+  sendNewVerify,
 };
