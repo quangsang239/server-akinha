@@ -5,16 +5,16 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
+const cors_1 = __importDefault(require("cors"));
 const user_controller_1 = __importDefault(require("../controller/user.controller"));
 const user_router_1 = __importDefault(require("./user.router"));
 const accommodation_router_1 = __importDefault(require("./accommodation.router"));
 const router = (app) => {
-    app.use(function (_req, res, next) {
-        res.header("Access-Control-Allow-Origin", "*");
-        res.header("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE");
-        res.header("Access-Control-Allow-Header", "Content-Type");
-        next();
-    });
+    app.use((0, cors_1.default)({
+        origin: "*",
+        methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+        credentials: true,
+    }));
     app.use((0, cookie_parser_1.default)());
     app.use(express_1.default.json());
     app.get("/", (_req, res) => {

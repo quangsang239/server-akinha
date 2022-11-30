@@ -10,7 +10,7 @@ let getLocation = (_req: Request, res: Response) => {
 let getAllAccommodation = (_req: Request, res: Response) => {
   AccommodationModel.find({})
     .then((data) => {
-      res.status(200).json({ data });
+      res.status(200).json(data);
     })
     .catch((error) => {
       console.log(error);
@@ -207,6 +207,17 @@ const deleteRoom = (req: Request, res: Response) => {
       res.status(500).json({ code: 1, message: "Xoá phòng thất bại" });
     });
 };
+const deleteRoomAdmin = (req: Request, res: Response) => {
+  const { _id } = req.body;
+  AccommodationModel.findByIdAndDelete({ _id })
+    .then(() => {
+      res.status(200).json({ code: 0, message: "Xoá phòng thành công!" });
+    })
+    .catch((error) => {
+      console.log(error);
+      res.status(500).json({ code: 1, message: "Xoá phòng thất bại" });
+    });
+};
 export default {
   getLocation,
   getPageAccommodation,
@@ -216,4 +227,5 @@ export default {
   getRoom,
   updateRoom,
   deleteRoom,
+  deleteRoomAdmin,
 };

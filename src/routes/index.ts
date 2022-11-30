@@ -1,17 +1,19 @@
-import express, { Application, Request, Response, NextFunction } from "express";
+import express, { Application, Request, Response } from "express";
 import cookieParser from "cookie-parser";
+import cors from "cors";
 import userController from "../controller/user.controller";
 
 import userRouter from "./user.router";
 import roomRouter from "./accommodation.router";
 
 const router = (app: Application) => {
-  app.use(function (_req: Request, res: Response, next: NextFunction) {
-    res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE");
-    res.header("Access-Control-Allow-Header", "Content-Type");
-    next();
-  });
+  app.use(
+    cors({
+      origin: "*",
+      methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+      credentials: true,
+    })
+  );
   app.use(cookieParser());
   app.use(express.json());
   app.get("/", (_req: Request, res: Response) => {

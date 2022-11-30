@@ -1,5 +1,6 @@
 import express from "express";
 import authRequest from "../middleware/authRequest";
+import authAdmin from "../middleware/authAdmin";
 import accommodationController from "../controller/accommodation.controller";
 
 const router = express.Router();
@@ -21,6 +22,11 @@ router.post("/update-room", authRequest, accommodationController.updateRoom);
 router.delete(
   "/delete-room/:_id",
   authRequest,
+  accommodationController.deleteRoom
+);
+router.post(
+  "/delete-room-admin",
+  authAdmin,
   accommodationController.deleteRoom
 );
 export default router;

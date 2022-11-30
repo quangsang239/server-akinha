@@ -8,6 +8,7 @@ export interface IUser extends Document {
   refreshToken: string;
   verified: boolean;
 }
+
 export interface IUserVerification extends Document {
   userId: string;
   uniqueString: string;
