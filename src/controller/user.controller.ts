@@ -36,7 +36,7 @@ transporter.verify((error, success) => {
 });
 
 const sendVerificationEmail = ({ _id, email }: any) => {
-  const currentUrl = "http://localhost:1305/api/";
+  const currentUrl = "https://akinha-server.onrender.com/api/";
   const uniqueString = uuidV4() + _id;
   const mailOptions = {
     from: EMAIL_USERNAME,
